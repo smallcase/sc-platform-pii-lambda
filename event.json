@@ -1,0 +1,6 @@
+
+{
+    "kmsKeyArn": "arn:aws:kms:ap-south-1:736414281642:key/faf736d8-7842-418b-a087-5ca43b476599",
+    "kmsKeyRegion": "ap-south-1",
+    "dekAltName": "test-dek-by-akshay"
+}
