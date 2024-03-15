@@ -2,30 +2,60 @@
 # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html
 version = 0.1
 
-[default]
-[default.global.parameters]
-stack_name = "sc-platform-pii-lambda"
+[staging]
+[staging.global.parameters]
+stack_name = "sc-platform-pii-lambda-staging"
 
-[default.build.parameters]
+[staging.build.parameters]
 cached = true
 parallel = true
 
-[default.validate.parameters]
+[staging.validate.parameters]
 lint = true
 
-[default.deploy.parameters]
+[staging.deploy.parameters]
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
 
-[default.package.parameters]
+[staging.package.parameters]
 resolve_s3 = true
 
-[default.sync.parameters]
+[staging.sync.parameters]
 watch = true
 
-[default.local_start_api.parameters]
+[staging.local_start_api.parameters]
 warm_containers = "EAGER"
 
-[default.local_start_lambda.parameters]
+[staging.local_start_lambda.parameters]
+warm_containers = "EAGER"
+
+
+
+[production]
+[production.global.parameters]
+stack_name = "sc-platform-pii-lambda-production"
+
+[production.build.parameters]
+cached = true
+parallel = true
+
+[production.validate.parameters]
+lint = true
+
+[production.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+
+[production.package.parameters]
+resolve_s3 = true
+
+[production.sync.parameters]
+watch = true
+
+[production.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[production.local_start_lambda.parameters]
 warm_containers = "EAGER"
