@@ -3,21 +3,34 @@ import { fromNodeProviderChain } from "@aws-sdk/credential-providers"; // ES6 im
 import mongodb from "mongodb";
 import fs from "fs";
 import { v4 as stringify } from "uuid";
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} from '@aws-sdk/client-secrets-manager';
 
 const { MongoClient } = mongodb;
 
 const KEY_NAMESPACE = `encryption.__keyVault`;
 
-let encryptionInstance = null;
-
-const uri = process.env.MONGODB_URI;
-let dbClient = null;
+/**
+ * Retrieves secret data from AWS Secrets Manager.
+ *
+ * @param {string} secretId The identifier for the secret in AWS Secrets Manager.
+ * @param {string} region The AWS region where the Secrets Manager is hosted.
+ * @returns {Promise<Object>} A promise that resolves with the secret data as a JSON object.
+ */
+const getSecretManagerData = async () => {
+  const secretsManagerClient = new SecretsManagerClient({ region: "ap-south-1" });
+  const secretsCommand = new GetSecretValueCommand({ SecretId: "staging-platform-pii-lambda" });
+  const secretsResponse = await secretsManagerClient.send(secretsCommand);
+  return JSON.parse(secretsResponse.SecretString);
+};
 
 /**
  * Initializes MongoDB connection and sets the dbInstance.
  * @returns {Promise<MongoClient>}
  */
-const initializeMongodb = async () => {
+const initializeMongodb = async (uri) => {
   try {
     const client = new MongoClient(uri, {
       useNewUrlParser: true,
@@ -34,10 +47,10 @@ const initializeMongodb = async () => {
  *
  * @returns { Promise<ClientEncryption> }
  */
-const initialize = async () => {
+const initialize = async (dbClient) => {
   const provider = fromNodeProviderChain();
   const aws = await provider();
-  encryptionInstance = new ClientEncryption(dbClient, {
+  const encryptionInstance = new ClientEncryption(dbClient, {
     keyVaultNamespace: KEY_NAMESPACE,
     kmsProviders: {
       aws: {
@@ -66,13 +79,14 @@ const initialize = async () => {
 export const lambdaHandler = async (event, context) => {
   try {
     const { kmsKeyArn, kmsKeyRegion, dekAltName } = event;
+    const secrets = await getSecretManagerData();
     if (!kmsKeyArn || !kmsKeyRegion || !dekAltName) {
       throw new Error(
         `One of the parameter is not provided kmsKeyArn: ${kmsKeyArn}, kmsKeyRegion: ${kmsKeyRegion}, dekAltName: ${dekAltName}`
       );
     }
-    await initializeMongodb();
-    await initialize();
+    const dbClient = await initializeMongodb(secrets.MONGODB_URI);
+    const encryptionInstance = await initialize(dbClient);
     const masterKey = {
       key: kmsKeyArn,
       region: kmsKeyRegion,
